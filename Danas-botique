@@ -1,120 +1,94 @@
- // server.js
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const path = require('path');
-const Product = require('./models/Product');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
-const app = express();
-
-app.use(express.static('public'));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.set('view engine', 'ejs');
-
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.log(err));
-
-app.get('/', async (req, res) => {
-  const products = await Product.find();
-  res.render('index', { products });
-});
-
-app.post('/create-checkout-session', async (req, res) => {
-  const product = await Product.findById(req.body.productId);
-
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: [{
-      price_data: {
-        currency: 'usd',
-        product_data: {
-          name: product.name,
-        },
-        unit_amount: product.price * 100,
-      },
-      quantity: 1,
-    }],
-    mode: 'payment',
-    success_url: `${req.headers.origin}/success`,
-    cancel_url: `${req.headers.origin}/`,
-  });
-
-  res.json({ id: session.id });
-});
-
-app.get('/success', (req, res) => {
-  res.send('<h2>Thank you for your purchase!</h2>');
-});
-
-app.listen(3000, () => console.log('Server running on http://localhost:3000'));
-
-// models/Product.js
-const mongoose = require('mongoose');
-const ProductSchema = new mongoose.Schema({
-  name: String,
-  price: Number,
-  image: String
-});
-module.exports = mongoose.model('Product', ProductSchema);
-
-// views/index.ejs
+// index.html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dana's Boutique</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Welcome to Dana's Boutique</h1>
-  <div class="products">
-    <% products.forEach(product => { %>
+  <header>
+    <h1>Dana's Boutique</h1>
+    <p>Chic & Affordable Fashion</p>
+  </header>
+  <main>
+    <section class="product-grid">
       <div class="product">
-        <img src="<%= product.image %>" alt="<%= product.name %>">
-        <h3><%= product.name %></h3>
-        <p>$<%= product.price %></p>
-        <button onclick="buyProduct('<%= product._id %>')">Buy Now</button>
+        <img src="https://via.placeholder.com/200x250" alt="Floral Dress">
+        <h3>Floral Dress</h3>
+        <p>$45.00</p>
+        <a href="https://instagram.com/danasboutique" target="_blank">Buy Now</a>
       </div>
-    <% }) %>
-  </div>
-  <script src="https://js.stripe.com/v3/"></script>
-  <script>
-    async function buyProduct(productId) {
-      const res = await fetch('/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId })
-      });
-      const data = await res.json();
-      const stripe = Stripe('<%= process.env.STRIPE_PUBLIC_KEY %>');
-      stripe.redirectToCheckout({ sessionId: data.id });
-    }
-  </script>
+      <div class="product">
+        <img src="https://via.placeholder.com/200x250" alt="Denim Jacket">
+        <h3>Denim Jacket</h3>
+        <p>$60.00</p>
+        <a href="https://instagram.com/danasboutique" target="_blank">Buy Now</a>
+      </div>
+      <div class="product">
+        <img src="https://via.placeholder.com/200x250" alt="Summer Top">
+        <h3>Summer Top</h3>
+        <p>$25.00</p>
+        <a href="https://instagram.com/danasboutique" target="_blank">Buy Now</a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <p>Contact us on <a href="https://instagram.com/danasboutique" target="_blank">Instagram</a></p>
+  </footer>
 </body>
 </html>
 
-// public/style.css
+// style.css
 body {
-  font-family: Arial;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #fff8f5;
+  color: #333;
   text-align: center;
-  background: #fef7f1;
 }
-.products {
+
+header {
+  background-color: #d08c60;
+  color: white;
+  padding: 2rem;
+}
+
+.product-grid {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
 }
+
 .product {
-  border: 1px solid #ccc;
-  margin: 10px;
-  padding: 10px;
-  width: 200px;
-  background-color: white;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  width: 220px;
+  padding: 1rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
+
 .product img {
   width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: 6px;
 }
+
+.product a {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 10px 15px;
+  background-color: #d08c60;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+footer {
+  background-color: #eee;
+  padding: 1rem;
+  margin-top:
